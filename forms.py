@@ -6,3 +6,7 @@ import app
 class AddEventForm(FlaskForm):
     title = StringField('Title')
     submit = SubmitField('Submit')
+
+class UpdateEventForm(FlaskForm):
+    title = StringField('Title')
+    submit = SubmitField('Submit')
