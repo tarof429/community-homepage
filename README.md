@@ -16,7 +16,7 @@ The community homepage app manages events with the following fields:
 
 Data will be stored in SQLite and displayed in a table. Users will be able to perform basic CRUD actions. 
 
-At this point, I'd like to introduce testing for models and utility functions/ This can alleviate some of the manual effort to ensure the application's functionality as additional features are added.
+At this point, I'd like to introduce testing for models and utility functions. This can alleviate some of the manual effort to ensure the application's functionality as additional features are added.
 
 Once the app is working, I'd like to address some of the limitations. As more events are added to the database, users will want to be able to search for events. Also I'd like to limit the number of events shown to the user. These problems can be solved by implementing a data table. There is actually a Javascript library called dataTables.js that will be used to implement this. Since I am only adding a Javascript library, I don't expect any tests to break.
 

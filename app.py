@@ -32,7 +32,7 @@ def create_app(testing=False):
         form = AddEventForm()
 
         if request.method == 'POST' and form.validate_on_submit():
-            new_event = Event(title=form.title.data)
+            new_event = Event(title=form.title.data, date=form.date.data)
             db.session.add(new_event)
 
             try:
