@@ -1,18 +1,20 @@
 from flask import Flask, render_template, request, flash, redirect, url_for
 from sqlalchemy.exc import IntegrityError
 
-from models import db
+from extensions import db
 from models.event import Event
 from forms import AddEventForm, UpdateEventForm
 
-def create_app():
+def create_app(testing=False):
     app = Flask(__name__)
 
     # Encrypt traffic between this Flask app and the client
     app.secret_key = 'secretkey'
 
     # Use SQLite
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///community.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = (
+        'sqlite:///:memory:' if testing else 'sqlite:///community.db'
+    )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
