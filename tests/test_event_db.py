@@ -11,7 +11,7 @@ def test_event_persistence():
     THEN check the title is saved correctly
     """
 
-    app = create_app(testing=True)
+    app = create_app(mode='test')
 
     with app.app_context():
         db.create_all()
@@ -24,4 +24,4 @@ def test_event_persistence():
 
         assert saved_event is not None
         assert saved_event.title == 'Test Event'
-        assert event.date == date(2026, 8, 5)
+        assert saved_event.date == date(2026, 8, 5)

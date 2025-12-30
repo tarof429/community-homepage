@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, render_template, request, flash, redirect, url_for
 from sqlalchemy.exc import IntegrityError
 
@@ -5,17 +7,20 @@ from extensions import db
 from models.event import Event
 from forms import AddEventForm, UpdateEventForm
 
-def create_app(testing=False):
+def create_app(mode=None):
     app = Flask(__name__)
 
-    # Encrypt traffic between this Flask app and the client
-    app.secret_key = 'secretkey'
-
-    # Use SQLite
-    app.config['SQLALCHEMY_DATABASE_URI'] = (
-        'sqlite:///:memory:' if testing else 'sqlite:///community.db'
-    )
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    if mode is None:
+        mode = os.environ.get('RUNTIME_MODE', 'test')
+    
+    if mode == 'test':
+        app.config.from_object('config.TestConfig')
+    elif mode == 'dev':
+        app.config.from_object('config.DevConfig')
+    elif mode == 'prod':
+        app.config.from_object('config.ProdConfig')
+    else:
+        raise ValueError(f'Unsupported mode: {mode}')
 
     db.init_app(app)
 
@@ -110,5 +115,5 @@ def create_app(testing=False):
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True)
+    app.run()
 
