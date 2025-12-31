@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, render_template, request, flash, redirect, url_for
+from flask_migrate import Migrate
 from sqlalchemy.exc import IntegrityError
 
 from extensions import db
@@ -24,9 +25,7 @@ def create_app(mode=None):
 
     db.init_app(app)
 
-    # Initialize the database
-    with app.app_context():
-        db.create_all()
+    migrate = Migrate(app, db)
 
     @app.route('/')
     def index():
@@ -37,7 +36,7 @@ def create_app(mode=None):
         form = AddEventForm()
 
         if request.method == 'POST' and form.validate_on_submit():
-            new_event = Event(title=form.title.data, date=form.date.data)
+            new_event = Event(title=form.title.data, date=form.date.data, time=form.time.data)
             db.session.add(new_event)
 
             try:

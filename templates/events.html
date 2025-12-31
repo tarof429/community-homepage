@@ -9,6 +9,7 @@
             <tr>
                 <th>Select</th>
                 <th>Date</th>
+                <th>Time</th>
                 <th>Event</th>
             </tr>
             </thead>
@@ -17,6 +18,7 @@
                 <tr>
                     <td><input type="radio" name="event_id"  value="{{ event.id }}"></td>
                     <td>{{ event.date }}</td>
+                    <td>{{ event.time.strftime('%-I:%M %p') }}</td>
                     <td>{{ event.title }}</td>
                 </tr>
                 {% endfor %}

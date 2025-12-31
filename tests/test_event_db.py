@@ -1,6 +1,6 @@
 from extensions import db
 from models.event import Event
-from datetime import date
+from datetime import date, time
 
 from app import create_app
 
@@ -16,7 +16,8 @@ def test_event_persistence():
     with app.app_context():
         db.create_all()
 
-        event = Event(title='Test Event', date=date(2026, 8, 5))
+        event = Event(title='Test Event', 
+            date=date(2026, 8, 5), time=time(hour=10, minute=15, second=33))
         db.session.add(event)
         db.session.commit()
 
@@ -25,3 +26,4 @@ def test_event_persistence():
         assert saved_event is not None
         assert saved_event.title == 'Test Event'
         assert saved_event.date == date(2026, 8, 5)
+        assert saved_event.time == time(hour=10, minute=15, second=33)

@@ -45,10 +45,20 @@ This application uses Flask and SQLAlchemy to manage events. The web interface i
 This project implements the following tests:
 
 - Unit tests
-- DB-based (DAO) ests
+- DB-based (DAO) tests
 
 To run:
 
 ```sh
 python -m pytest
 ```
+
+The schema is managed with Flask-Migrate. When updating the schema, 
+
+1. Create a migration: `flask db migrate -m "Initial migration`
+
+2. Apply the changes: `flask db upgrade`
+
+## References
+
+https://flask-migrate.readthedocs.io/en/latest/
