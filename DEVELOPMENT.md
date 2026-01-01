@@ -53,11 +53,53 @@ To run:
 python -m pytest
 ```
 
-The schema is managed with Flask-Migrate. When updating the schema, 
+## Development
 
-1. Create a migration: `flask db migrate -m "Initial migration`
+The schema is managed with Flask-Migrate. It supports 3 environments: test, dev and prod. These are defined in `config.py`. Below is an explanation of these environments:
 
-2. Apply the changes: `flask db upgrade`
+- The `test` environment uses an in-memory SQLite database
+- The `dev` environment uses a SQLite database persisted to a file
+- The `prod` environment uses an external database such as postgres
+
+When updating the schema, 
+
+1. Make sure you have set your environment variables for Flask. For example:
+
+```sh
+export FLASK_APP=app.py
+export FLASK_DEBUG=True
+export RUNTIME_MODE=dev
+```
+
+2. Create a migration: `flask db migrate -m "Add a new column`
+
+3. Apply the changes: `flask db upgrade`
+
+Do NOT remove the instance directory.
+
+## Running
+
+Make sure your environment variables are set correctly.
+
+For example, for the `dev` environment:
+
+```sh
+export FLASK_APP=app.py
+export FLASK_DEBUG=True
+export RUNTIME_MODE=dev
+```
+
+Then:
+
+```sh
+flask run
+```
+
+For the `prod` environment, be sure to set DATABASE_URI. Below is the URI for the Postgres docker container.
+
+```sh
+export DATABASE_URI=postgresql://admin:secret@localhost:5432/db
+```
 
 ## References
 
