@@ -13,3 +13,13 @@ def test_new_event():
     assert event.title == 'New Event'
     assert event.date == date(2025, 12, 10)
     assert event.time == time(hour=10, minute=15, second=33)
+
+def test_long_event_name():
+    """
+    Handle long event names
+    """
+    event = Event(title='A very long event name', 
+        date=date(2025, 12, 10), time=time(hour=10, minute=15, second=33))
+    assert event.title == 'A very long event name'
+    assert event.date == date(2025, 12, 10)
+    assert event.time == time(hour=10, minute=15, second=33)

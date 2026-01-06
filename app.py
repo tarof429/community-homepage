@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_migrate import Migrate
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DataError
 
 from extensions import db
 from models.event import Event
@@ -45,8 +45,12 @@ def create_app(mode=None):
             except IntegrityError:
                 flash('Eent name must be unique!', 'danger')
                 db.session.rollback()
+            except DataError:
+                flash('Invalid data submitted', 'danger')
+                db.session.rollback()
             except Exception as e:
                 flash(str(e), 'danger')
+                db.session.rollback()
 
             events = Event.query.all()
             return render_template('events.html', events=events)
@@ -93,8 +97,13 @@ def create_app(mode=None):
             except IntegrityError:
                 flash('Event name must be unique!', 'danger')
                 db.session.rollback()
-        else:
-            print('Something happened')
+            except DataError:
+                flash('Invalid data submitted', 'danger')
+                db.session.rollback()
+            except Exception as e:
+                flash('An unhandled exception happened when calling update_event()', 'danger')
+                flash(str(e), 'danger')
+                db.session.rollback()
         
         return render_template('update_event_form.html', 
             form=form, page_title='Update event')

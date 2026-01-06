@@ -16,7 +16,7 @@
             <tbody>
                 {% for event in events %}
                 <tr>
-                    <td><input type="radio" name="event_id"  value="{{ event.id }}"></td>
+                    <td><input type="radio" name="event_id"  id="selected_event" value="{{ event.id }}" onclick="enableButtons(this)"></td>
                     <td>{{ event.date }}</td>
                     <td>{{ event.time.strftime('%-I:%M %p') }}</td>
                     <td>{{ event.title }}</td>
@@ -24,10 +24,10 @@
                 {% endfor %}
             </tbody>
         </table>
-        <button type="button" id="deleteButton" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#deleteModal">
+        <button type="button" id="deleteButton" class="btn btn-primary disabled" data-bs-toggle="modal" data-bs-target="#deleteModal">
             Delete
         </button>
-        <button name="action" value="update" type="submit" class="btn btn-secondary">Update</button>
+        <button name="action" id="updateButton" value="update" type="submit" class="btn btn-secondary disabled">Update</button>
 
         <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -48,5 +48,18 @@
             </div>
         </div>
     </form>
+
+    <script>
+        function enableButtons(radio) {
+            deleteButton = document.getElementById('deleteButton');
+            updateButton = document.getElementById('updateButton');
+
+            deleteButton.classList.remove('disabled');
+            deleteButton.disabled = false;
+
+            updateButton.classList.remove('disabled');
+            updateButton.disabled = false;
+        }
+    </script>
 
 {% endblock %}

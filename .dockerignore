@@ -1,0 +1,10 @@
+*.md
+Dockerfile
+LICENSE
+__pycache__
+.pytest_cache
+instance
+tests
+venv
+.gitignore
+*.yaml
