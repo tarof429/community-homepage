@@ -20,9 +20,12 @@ To deactivate it, run
 deactivate
 ```
 
+The code for the Python application is located in the `src` directory. 
+
 You can use the provided requirements.txt file to install libraries.
 
 ```sh
+cd src
 pip install -r requirements.txt
 ```
 
@@ -114,7 +117,7 @@ The goals of running this app using docker are:
 To build the docker container, run:
 
 ```sh
-docker build -t community-homepage .
+docker -f docker/Dockerfile build -t community-homepage .
 ```
 
 To run the container, you can run:
@@ -122,6 +125,8 @@ To run the container, you can run:
 ```sh
 docker run -d -p 5000:5000 --name homepage community-homepage
 ```
+
+This will use SQLite as the backing database.
 
 To see the logs:
 
@@ -144,10 +149,10 @@ Press CTRL+C to quit
 
 This will use the dev configuration but can be overridden. 
 
-To run the container with docker-compose:
+The docker-compose file will use Postgres as the backing database.
 
 ```sh
-docker compose up -d
+docker compose -f docker/docker-compose.yaml up -d
 ```
 
 There are two services in the docker-compose file. The first service is the Postgres database. The second sevice runs the Flask application. Since the database needs to have the correct schema, this can take a while before it is available for use. To handle this suituation, the docker-compose file defines both a dependency asnd a healthcheck; this pattern is discussed at https://docs.docker.com/compose/how-tos/startup-order/. Furthermore, the Flask application service defines the POSTGRES_URL so that it can connect to the external database. 
@@ -159,7 +164,7 @@ To tag and push the docker image to hub.docker.com:
  docker push tarof429/community-homepage:1.0
 ```
 
-In the last step, the goal is to deploy the application to an EC2 instance. The EC2 instance can be g the AWSconsole. To install docker on it, see https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-docker.html. 
+In the last step, the goal is to deploy the application to an EC2 instance. The EC2 instance can be created using the AWS console. To install docker on it, see https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-docker.html. 
 
 Make sure the instance opens port 22 for SSH access and 5000 for web access. 
 

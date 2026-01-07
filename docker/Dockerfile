@@ -6,13 +6,13 @@ ENV FLASK_APP=app.py \
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY src/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 5000
 
-COPY . .
+COPY src .
 
 RUN chmod +x entrypoint.sh
 

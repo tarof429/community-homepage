@@ -1,10 +1,9 @@
 *.md
-Dockerfile
 LICENSE
-__pycache__
-.pytest_cache
-instance
-tests
+docker/
+src/__pycache__
+src/.pytest_cache
+src/instance
+src/tests
 venv
 .gitignore
-*.yaml
