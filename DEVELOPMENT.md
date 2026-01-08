@@ -183,6 +183,26 @@ docker compose pull
 docker compose up -d
 ```
 
+## Creating the Webserver with Terraform
+
+Terraform is a tool that can be used to create EC2 instances and other resources needed to deploy applications in the cloud. 
+
+The `terraform-webserver` project is used to create an EC2 instance to which we can deploy our Flask application.
+
+```sh
+cd terraform-webserver
+terraform plan
+terraform apply -auto-approve
+```
+
+Afterwards, you need to:
+
+- Install docker
+= Install docker-compose
+- Copy the docker-compose file to the server
+- Run the server and related database using docker-compose
+
+
 
 ## References
 
