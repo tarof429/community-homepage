@@ -4,6 +4,8 @@
 
 This is a community homepage similar to those found on websites like https://www.paloaltoonline.com. It has a special focus on a community calendar where users can browse for local events. Below is a description of the initial requirements and progression of code development.
 
+<img src="community_homepage.png" />
+
 ## Description
 
 The community homepage app manages events with the following fields:

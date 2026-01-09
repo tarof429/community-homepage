@@ -1,9 +1,12 @@
 *.md
+*.png
 LICENSE
+.gitignore
+venv/
 docker/
+ansible/
+terraform/
 src/__pycache__
 src/.pytest_cache
 src/instance
 src/tests
-venv
-.gitignore

@@ -1,0 +1,16 @@
+- name: Start docker containers
+  hosts: tag_Name_prod_webserver
+  tasks:
+    - name: Copy docker-compose
+      copy:
+        src: ../docker/docker-compose.yaml
+        dest: /home/ec2-user/docker-compose.yaml
+
+    - name: Start app
+      community.docker.docker_compose_v2:
+        project_src: /home/ec2-user
+        state: present
+
+    - name: Show final message
+      debug:
+        msg: "Web application will be available at http://{{ hostvars[inventory_hostname].public_ip_address }}:5000"

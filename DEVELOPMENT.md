@@ -183,7 +183,7 @@ docker compose pull
 docker compose up -d
 ```
 
-## Creating the Webserver with Terraform
+## Creating the webserver with Terraform
 
 Terraform is a tool that can be used to create EC2 instances and other resources needed to deploy applications in the cloud. 
 
@@ -202,7 +202,171 @@ Afterwards, you need to:
 - Copy the docker-compose file to the server
 - Run the server and related database using docker-compose
 
+## Configuring the webserver with Ansible
 
+Ansible can be used to configure the server. Since the server is running in AWS, we need to install the amazon.aws collection, which requires some additional packages so that it can talk to AWS using APIs.
+
+```sh
+sudo pacman -S ansible
+sudo pacman -S python-boto3 python-botocore
+ansible-galaxy collection install amazon.aws
+```
+
+We can use dynamic inventory to discover any EC2 instances. Enable the dynamic inventory plugin by adding the following in ansible.cfg:
+
+```sh
+enable_plugins = aws_ec2
+```
+
+Next, we're going to create a plugin configuration; the filename must contain `aws_ec2` or the plugin will not be able to find it. 
+
+```sh
+$ ansible-inventory -i inventory_aws_ec2.yaml --list
+```
+
+Alternatively (for shorter output):
+
+```sh
+$ ansible-inventory -i inventory_aws_ec2.yaml --graph
+@all:
+  |--@ungrouped:
+  |--@aws_ec2:
+  |  |--ip-10-0-10-139.us-west-2.compute.internal
+  |--@tag_Name_prod_webserver:
+  |  |--ip-10-0-10-139.us-west-2.compute.internal
+  |--@instance_type_t2_micro:
+  |  |--ip-10-0-10-139.us-west-2.compute.internal
+```
+
+Note the inventory name with the tag.
+
+In case you have not configured terraform to assign public DNS names, these are private DNS names. And in that case we would not be able to connect to the servers from outside the VPC. The fix is obviously to configure Terraform to assign public DNS names and this would be done within the **aws_vpc** resource. 
+
+For ansible to connect to these servers, we could configure the playbooks to use the **aws_ec2** group. 
+
+For example:
+
+```sh
+$ ansible-playbook -i inventory_aws_ec2.yaml sshping.yaml 
+
+PLAY [Ping server] *************************************************************
+[WARNING]: Found variable using reserved name 'tags'.
+Origin: <unknown>
+
+tags
+
+
+TASK [Gathering Facts] *********************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Ping] ********************************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com] => {
+    "msg": "Ping!"
+}
+
+PLAY RECAP *********************************************************************
+ec2-1-2-3-4.us-west-2.compute.amazonaws.com : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0 
+```
+
+To install docker, docker-compose, and add ec2-user to the docker group, use the install-docker-webserver playbook.
+
+```sh
+$ ansible-playbook -i inventory_aws_ec2.yaml 1-install-docker-webserver.yaml 
+
+PLAY [Install docker] **********************************************************
+[WARNING]: Found variable using reserved name 'tags'.
+Origin: <unknown>
+
+tags
+
+
+TASK [Gathering Facts] *********************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Install docker] **********************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Start docker daemon] *****************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+PLAY [Install docker-compose] **************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Create docker-compose directory] *****************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Get architecture of remote server] ***************************************
+changed: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Download and install docker-compose] *************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+PLAY [Add ec2-user to docker group] ********************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Add ec2-user to docker group] ********************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Reconnect to server session] *********************************************
+
+PLAY [Log into DockerHub] ******************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Login to dockerhub] ******************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+PLAY [Test docker pull] ********************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Pull hello-world] ********************************************************
+changed: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+PLAY RECAP *********************************************************************
+ec2-1-2-3-4.us-west-2.compute.amazonaws.com : ok=13   changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
+This playbook requires authentication to docker hub; create a file called `myvars` and populate it with the following:
+
+```
+docker_user: <some value>
+docker_password: <access token>
+```
+
+This file should NOT be committed to git.
+
+To deploy the webapp, use the playbook `2-deploy-webapp-to-dc2.yaml`.
+
+This playbook ends with a message that explains how to access the webapp.
+
+```sh
+$ ansible-playbook 2-deploy-webapp-to-ec2.yaml -i inventory_aws_ec2.yaml 
+
+PLAY [Start docker containers] *************************************************
+[WARNING]: Found variable using reserved name 'tags'.
+Origin: <unknown>
+
+tags
+
+
+TASK [Gathering Facts] *********************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com]
+
+TASK [Show final message] ******************************************************
+ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com] => {
+    "msg": "Web application will be available at http://1.2.3.4:5000"
+}
+
+PLAY RECAP *********************************************************************
+ec2-1-2-3-4.us-west-2.compute.amazonaws.com : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
 
 ## References
 

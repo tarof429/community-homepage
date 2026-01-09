@@ -1,0 +1,62 @@
+---
+- name: Install docker
+  hosts: tag_Name_prod_webserver
+  become: yes
+  tasks:
+    - name: Install docker 
+      yum:
+        name: docker 
+        update_cache: yes
+        state: present
+    - name: Start docker daemon 
+      systemd:
+        name: docker
+        state: started
+
+- name: Install docker-compose
+  hosts: tag_Name_prod_webserver
+  tasks:
+    - name: Create docker-compose directory
+      file:
+        path: ~/.docker/cli-plugins
+        state: directory
+
+    - name: Get architecture of remote server
+      shell: uname -m
+      register: remote_arch
+
+    - name: Download and install docker-compose
+      get_url: 
+        url: "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-{{ remote_arch.stdout }}"
+        dest: ~/.docker/cli-plugins/docker-compose
+        mode: +x
+
+- name: Add ec2-user to docker group
+  hosts: tag_Name_prod_webserver
+  become: yes
+  tasks:
+    - name: Add ec2-user to docker group 
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+    - name: Reconnect to server session
+      meta: reset_connection
+
+- name: Log into DockerHub
+  hosts: tag_Name_prod_webserver
+  vars_files:
+    - myvars
+  tasks:
+    - name: Login to dockerhub
+      community.docker.docker_login:
+        username: "{{ docker_user }}"
+        password: "{{ docker_password }}"
+
+- name: Test docker pull
+  hosts: tag_Name_prod_webserver
+  tasks:
+    - name: Pull hello-world
+      docker_image:
+        name: hello-world
+        source: pull
