@@ -465,6 +465,40 @@ A couple notes on issues that I ran into and how they were resolved:
 
 - Jenkins warned that there could be a memory leak if I didn't use the `def` keyword in front of variables.
 
+## Dealing with versions
+
+One potential issue with our pipeline is that we always push and pull the image with the `latest` tag. When dealing with images in production, we never want to rely on this tag. Rather, we need some way to work with clearly identifiable tags. In some scenarios, this could come from the version of the project stored in a file like `pom.xml` if this wew a Maven project. For Python, `setuptools` provides a method for tracking versions for distribution to Pypi. However, in our project we could opt for an even simpler soltion and just use the git commmit hash. This has the advantage that there are no extra files to parse and manage.
+
+The `2-Jenkinsfile` pipeline script sets the image tag to the git version. However, there were several issues that had to be resolved before getting it to work. 
+
+My first attempt tried to set the git version to ba variable:
+
+```groovy
+stage("Build image") {
+    steps {
+        script {
+            def IMAGE_TAG = "$(git describe --tags --always)"
+
+            sh "docker build -f docker/Dockerfile -t ${env.IMAGE_PREFIX}:${IMAGE_TAG} ."
+        }
+    }
+}
+```
+
+The problem is that groovy cannot run shell commands like this. But further attempts to resolve that issue still did not work. In the final version, we define the variable before the pipeline so that it can be reused across multiple stages. We also define or set the variable in a stage. Moreover, we trim the string so that it doesn't have a newline. 
+
+```groovy
+  stage("Get git veresion") {
+      steps {
+          script {
+              IMAGE_TAG = sh(
+                  script: "git rev-parse --short=7 HEAD",
+                  returnStdout: true
+              ).trim()
+          }
+      }
+  }
+```
 
 ## Creating the Jenkins server with Terraform
 
