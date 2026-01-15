@@ -9,4 +9,3 @@ terraform/
 src/__pycache__
 src/.pytest_cache
 src/instance
-src/tests

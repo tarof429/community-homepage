@@ -1,0 +1,85 @@
+---
+- name: Install docker
+  hosts: jenkins_server
+  become: yes
+  tasks:
+    - name: Install docker
+      get_url:
+        url: https://get.docker.com
+        dest: /tmp/get-docker.sh
+        mode: '0755'
+      register: download_result
+
+    - name: Run install script
+      shell: /tmp/get-docker.sh
+      when:
+        download_result.changed
+
+    - name: Start docker daemon 
+      systemd:
+        name: docker
+        state: started
+
+- name: Install docker-compose
+  hosts: jenkins_server
+  tasks:
+    - name: Create docker-compose directory
+      file:
+        path: ~/.docker/cli-plugins
+        state: directory
+
+    - name: Get architecture of remote server
+      shell: uname -m
+      register: remote_arch
+
+    - name: Download and install docker-compose
+      get_url: 
+        url: "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-{{ remote_arch.stdout }}"
+        dest: ~/.docker/cli-plugins/docker-compose
+        mode: +x
+
+- name: Add jenkins to docker group
+  hosts: jenkins_server
+  become: yes
+  tasks:
+    - name: Add jenkins to docker group 
+      user:
+        name: jenkins
+        groups: docker
+        shell: /usr/bin/bash
+        append: yes
+    - name: Reconnect to server session
+      meta: reset_connection
+
+- name: Log into DockerHub
+  hosts: jenkins_server
+  become: yes
+  environment:
+    DOCKER_CONFIG: /home/jenkins/.docker
+  vars_files:
+    - myvars
+  tasks:
+    - name: Login to dockerhub
+      community.docker.docker_login:
+        username: "{{ docker_user }}"
+        password: "{{ docker_password }}"
+    - name: Fix permissions
+      file:
+        path: /home/jenkins/.docker
+        owner: jenkins
+        group: jenkins
+        recurse: yes
+
+- name: Test docker pull
+  hosts: jenkins_server
+  become: yes
+  become_user: jenkins
+  become_flags: "-i"
+  environment:
+    HOME: /home/jenkins
+    DOCKER_CONFIG: /home/jenkins/.docker
+  tasks:
+    - name: Pull hello-world
+      docker_image:
+        name: hello-world
+        source: pull

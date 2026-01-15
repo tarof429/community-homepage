@@ -117,7 +117,7 @@ The goals of running this app using docker are:
 To build the docker container, run:
 
 ```sh
-docker -f docker/Dockerfile build -t community-homepage .
+docker build -f docker/Dockerfile -t community-homepage .
 ```
 
 To run the container, you can run:
@@ -367,6 +367,108 @@ ok: [ec2-1-2-3-4.us-west-2.compute.amazonaws.com] => {
 PLAY RECAP *********************************************************************
 ec2-1-2-3-4.us-west-2.compute.amazonaws.com : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
+
+## Creating the Jenkins server with KVM
+
+Running Jenkins on a VM is a great way to get familiar with CI/CD without incurring AWS cloud usage costs. On a Linux machine, KVM is a grat way to create VMs. This does require additional setup however, and will not be explained in detail here. Below are resources to get started with KVM on ArchLinux (which I have authored):
+
+- https://github.com/tarof429/stuckathome has a section that describes how to setup KVM
+- https://github.com/tarof429/magarin has scripts to create VMs with KVM
+
+A VM with 4 GB RAM and 2 CPU is recommended, and either Ubuntu 22 or 24 should be fine, provided that the OS is still supported.
+
+## Installing docker on the KVM with Ansible
+
+Once the server is running, we need to add the user who will run Jenkins. This user will run Jenkins using. The `3-install-docker-on-jenkins-server.yaml` playbook:
+
+- Installs docker and docker-compose
+- Create a user called `jenkins` and add it to the docker group
+- Login to dockerhub
+- Pull a docker image
+
+To run:
+
+```sh
+ANSIBLE_CONFIG=ansible_kvm.cfg ansible-playbook 3-install-docker-on-jenkins-server.yaml 
+```
+
+It's vital that the `-i` flag is passed to `sudo` when running docker commands so that the environment variables are set correctly.
+
+## Installing Jenkins on the KVM
+
+Before running the Jenkins docker container, you should know that there are 2 wqys to run docker containers: rootless and rootful. 
+
+### Rootful docker method
+
+For a rootful docker, we mount the docker socket on the host to the container. 
+
+First, note the default permissions for the socker:
+
+```sh
+jenkins@jenkins-server:~$ ls -l /var/run/docker.sock 
+srw-rw---- 1 root docker 0 Jan 12 22:25 /var/run/docker.sock
+```
+
+Change the permissions for the docker socket on the host:
+
+```sh
+chmod 666 /var/run/docker.sock
+```
+
+Change the user to jenkins and run the container:
+
+```sh
+su - jenkins
+docker run -d -p 8080:8080 -p 50000:50000 --name jenkins --restart=on-failure -v jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock jenkins/jenkins:lts-jdk21
+```
+
+In our Jenkins jobs, we need to run docker commands such as `docker pull` and `docker run`. Install docker so we can use the docker CLI within the container. Below is a quick way to install docker daemon.
+
+```sh
+docker exec -ti -u 0 jenkins bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh ./get-docker.sh
+```
+
+### Rootless docker method
+
+Alternatively we can setup rootless docker. However, since docker is designed to be run as a system service, it is very tricky to get docker working for this setup. Podman addresses this limitation, but will not be explored here. 
+
+### Logging into Jenkins
+
+Once the container is running, access the web interface at http://192.168.1.30:8080. It will prompt for the admin's password. To retrieve the pasword, login to the container as root and examine the contents of the file containing the pasword:
+
+```sh
+docker exec -ti -u 0 jenkins bash
+cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+Install the recommended plugins, and the UI should be ready to use.
+
+## Creating an initial pipeline script
+
+The first pipeline script `1-Jenkinsfile` does the following:
+
+- Run tests
+- Build the docker image
+- Push the docker image
+
+For convenience, we will build a separate docker image that will run the tests automatically. 
+
+As required, create credentials in Jenkins so that Jenkins can push the docker image.
+
+A couple notes on issues that I ran into and how they were resolved:
+
+- The initial docker image that I used for for Jenkins was based on JDK 17. But since this image is deprecated, I upgraded to the image based on JDK 21. I thought that was all I had to do, but later realized that docker had to be reinstalled and the permissions on the docker sockety had to be fixed.
+
+- I added github credentials in Jenkins but I had used the token type instead of username/password. The username/password is the only credential type that will work.
+
+- Jenkins warned that there could be a memory leak if I didn't use the `def` keyword in front of variables.
+
+
+## Creating the Jenkins server with Terraform
+
+## Creating the CI/CD pipeline
 
 ## References
 

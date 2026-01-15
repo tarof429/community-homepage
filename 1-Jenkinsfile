@@ -1,0 +1,52 @@
+pipeline {   
+    agent any
+
+    stages {
+        stage('Build test image') {
+            steps {
+                script {
+                    sh 'docker build -f docker/Dockerfile-test -t community-homepage-test .'
+                }
+            }
+        }
+
+        stage('Run tests') {
+            steps {
+                script {
+                    def testFailed = sh returnStatus: true, script: 'docker run community-homepage-test'
+                    
+                    if (testFailed != 0) {
+                        error('Tests failed')
+                }
+                }
+            }
+        }
+
+        stage("Build image") {
+            steps {
+                script {
+                    sh 'docker build -f docker/Dockerfile -t tarof429/community-homepage:1.0 .'
+                }
+            }
+        }
+
+        stage("Push image") {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        sh 'echo $PASS | docker login -u $USER --password-stdin'
+                        sh 'docker push tarof429/community-homepage:1.0'
+                    }
+                }
+            }
+        }
+
+        stage('Deploy app') {
+            steps {
+                script {
+                    echo 'Deploy app'
+                }
+            }
+        }           
+    }
+} 
