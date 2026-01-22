@@ -1,0 +1,88 @@
+def applib
+
+def IMAGE_TAG
+
+pipeline {   
+    agent any
+
+    environment {
+        TEST_IMAGE_PREFIX = "tarof429/community-homepage-test"
+        IMAGE_PREFIX = "tarof429/community-homepage"
+    }
+
+    stages {
+        stage('Load library') {
+            steps {
+                script {
+                    applib = load('app.groovy')
+                }
+            }
+        }
+
+        stage('Display environment') {
+            steps {
+                script {
+                    applib.showEnvironment()
+                }
+            }
+        }
+
+        stage("Get git veresion") {
+            steps {
+                script {
+                    IMAGE_TAG = sh(
+                        script: "git rev-parse --short=7 HEAD",
+                        returnStdout: true
+                    ).trim()
+                }
+            }
+        }
+
+        stage('Build test image') {
+            steps {
+                script {
+                    sh "docker build -f docker/Dockerfile-test -t ${env.TEST_IMAGE_PREFIX} ."
+                }
+            }
+        }
+
+        stage('Run tests') {
+            steps {
+                script {
+                    def testFailed = sh returnStatus: true, script: "docker run ${env.TEST_IMAGE_PREFIX}"
+                    
+                    if (testFailed != 0) {
+                        error('Tests failed')
+                }
+                }
+            }
+        }
+
+        stage("Build image") {
+            steps {
+                script {
+                    sh "docker build -f docker/Dockerfile -t ${env.IMAGE_PREFIX}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage("Push image") {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        sh 'echo $PASS | docker login -u $USER --password-stdin'
+                        sh "docker push ${env.IMAGE_PREFIX}:${IMAGE_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy app') {
+            steps {
+                script {
+                    echo 'Deploy app'
+                }
+            }
+        }           
+    }
+} 

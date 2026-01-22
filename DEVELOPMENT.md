@@ -500,6 +500,25 @@ The problem is that groovy cannot run shell commands like this. But further atte
   }
 ```
 
+## Using Groovy Scripts
+
+At times, it is convenient to use functions inside Jenkins pipelines. To mdo this, we can create groovy scripts. These are scripts stored in the same git repository as the pipeline scripts written in groovy.
+
+For example, lets say we want to define a function to help us troubleshoot environment issues. See `app.groovy` for an example groovy script, and `3-Jenkinsfile` to see how to load and use it. A sample output is showen below.
+
+```sh
+Showing environment
+[Pipeline] sh
++ which docker
+/usr/bin/docker
+[Pipeline] sh
++ whoami
+jenkins
+[Pipeline] sh
++ pwd
+/var/jenkins_home/workspace/community-homepage
+```
+
 ## Creating the Jenkins server with Terraform
 
 ## Creating the CI/CD pipeline
