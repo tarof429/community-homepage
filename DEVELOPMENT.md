@@ -519,6 +519,10 @@ jenkins
 /var/jenkins_home/workspace/community-homepage
 ```
 
+## Variables
+
+Earlier we defined variables to define the image name and to determine whether tests passed or not. Jenkins has a few other variable types. These include builtin  environment variables and parameters. The builtin variables are provided by bJenkins and include things like BUILD_NUMBER and WORKSPACE; see https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables. Jobs can also be parameterized so that when the build is triggered, the user can provide a variable value. 
+
 ## Creating the Jenkins server with Terraform
 
 ## Creating the CI/CD pipeline
