@@ -523,6 +523,8 @@ jenkins
 
 Earlier we defined variables to define the image name and to determine whether tests passed or not. Jenkins has a few other variable types. These include builtin  environment variables and parameters. The builtin variables are provided by bJenkins and include things like BUILD_NUMBER and WORKSPACE; see https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables. Jobs can also be parameterized so that when the build is triggered, the user can provide a variable value. 
 
+A special type of Jenkins job called the multibranch pipeline can be used to take advantage of the BRANCH_NAME variable. This job scans git repositories and  creates child jobs for each of the remote branches. In this kind of job, we can use BRANCH_NAME to trigger certain stages only if it is part of a particular branch.
+
 ## Creating the Jenkins server with Terraform
 
 ## Creating the CI/CD pipeline
