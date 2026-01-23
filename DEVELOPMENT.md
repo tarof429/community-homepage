@@ -525,6 +525,12 @@ Earlier we defined variables to define the image name and to determine whether t
 
 A special type of Jenkins job called the multibranch pipeline can be used to take advantage of the BRANCH_NAME variable. This job scans git repositories and  creates child jobs for each of the remote branches. In this kind of job, we can use BRANCH_NAME to trigger certain stages only if it is part of a particular branch.
 
+See `4-Jenkinsfile` for an example.
+
+## Shared Libraries
+
+A common practice is to create a shared library that can be reused across multiple pipeline scripts. See `5-Jenkinsfile` for an example. There are multiple ways to load shared libraries; what we have done is load the library and use steps in `vars/*.groovy`.  The shared library is commited to git at https://github.com/tarof429/community-homepage-shared-lib.git and in `Jenkins | System` we make this library globally available to any pipeline jobs.
+
 ## Creating the Jenkins server with Terraform
 
 ## Creating the CI/CD pipeline
