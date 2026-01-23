@@ -1,0 +1,109 @@
+#!/usr/bin/env groovy
+
+@Library('my-jenkins-shared-library')_
+
+def applib
+def IMAGE_TAG
+
+pipeline {   
+    agent any
+
+    parameters {
+        booleanParam defaultValue: true, name: 'deploy'
+    }
+
+    environment {
+        TEST_IMAGE_PREFIX = "tarof429/community-homepage-test"
+        IMAGE_PREFIX = "tarof429/community-homepage"
+    }
+
+    stages {
+        stage('Load library') {
+            steps {
+                script {
+                    applib = load('app.groovy')
+                }
+            }
+        }
+
+        stage('Display environment') {
+            steps {
+                script {
+                    applib.showEnvironment()
+                }
+            }
+        }
+
+        stage("Get git veresion") {
+            steps {
+                script {
+                    IMAGE_TAG = sh(
+                        script: "git rev-parse --short=7 HEAD",
+                        returnStdout: true
+                    ).trim()
+                }
+            }
+        }
+
+        stage('Build test image') {
+            steps {
+                script {
+                    buildDockerImage('docker/Dockerfile-test', "${env.TEST_IMAGE_PREFIX}:latest")
+                    //sh "docker build -f docker/Dockerfile-test -t ${env.TEST_IMAGE_PREFIX} ."
+                }
+            }
+        }
+
+        stage('Run tests') {
+            steps {
+                script {
+                    def testFailed = sh returnStatus: true, script: "docker run ${env.TEST_IMAGE_PREFIX}"
+                    
+                    if (testFailed != 0) {
+                        error('Tests failed')
+                    }
+                }
+            }
+        }
+
+        stage("Build image") {
+            steps {
+                script {
+                    buildDockerImage("docker/Dockerfile", "${env.IMAGE_PREFIX}:${IMAGE_TAG}")
+                    //sh "docker build -f docker/Dockerfile -t ${env.IMAGE_PREFIX}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage("Push image") {
+            when {
+                expression {
+                    env.BRANCH_NAME == 'main'
+                }
+            }
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        sh 'echo $PASS | docker login -u $USER --password-stdin'
+                        pushDockerImage("${env.IMAGE_PREFIX}:${IMAGE_TAG}")
+                        //sh "docker push ${env.IMAGE_PREFIX}:${IMAGE_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy app') {
+            when {
+                expression {
+                    env.BRANCH_NAME == 'main' && params.deploy
+                }
+            }
+            steps {
+                script {
+                    deployApp()
+                    // echo 'Deploy app'
+                }
+            }
+        }           
+    }
+} 
